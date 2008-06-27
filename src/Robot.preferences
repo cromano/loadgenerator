@@ -1,7 +1,0 @@
-scriptLogLocation="\script.xml"
-errorLogLocation="\errorLog.xml
-resultLogLocation="\resultLog.xml"
-consoleLogLocation="\consoleLog.xml"
-Duration=10000
-Iteration=10
-robotWait=5000
