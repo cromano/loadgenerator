@@ -1,0 +1,34 @@
+<MyScript>
+
+
+
+
+
+	<Properties>
+		<cacheSize>50</cacheSize>
+		<domain>http://en.wikipedia.org</domain>
+		<jobID>0001</jobID>
+		<timeout>5000</timeout>
+		<waitstep>1000</waitstep>
+		<iteration>1</iteration>
+		<duration>60000</duration>
+		<proxyPort>8099</proxyPort>
+		<proxyHost>none</proxyHost>
+		<javaScriptEnabled>false</javaScriptEnabled>
+		<redirectEnabled>true</redirectEnabled>
+		<throwExceptionOnScriptError>true</throwExceptionOnScriptError>
+		<useInsecureSSL>false</useInsecureSSL>
+		<popupBlockerEnabled>true</popupBlockerEnabled>
+		<htmlRobotBrowserVersion>none</htmlRobotBrowserVersion>
+	</Properties>
+
+	<Steps>
+		<WAIT length="3000" />
+		<INVOKE path="/wiki/Wiki" />
+		<VERIFY_TITLE title="page_title" />
+		<BUTTON name="test_button" />
+		<SET_INPUT_FIELD name="username" password="test" />
+		<FILL_FORM username="name" />
+	</Steps>
+
+</MyScript>

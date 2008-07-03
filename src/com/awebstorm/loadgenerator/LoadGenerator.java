@@ -1,11 +1,10 @@
 package com.awebstorm.loadgenerator;
 
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -28,20 +27,20 @@ public class LoadGenerator {
 
 	private static Logger consoleLog;
 	private static Logger resultLog;
-	private static Logger errorLog;
 	private static URL scheduler;
 	private PropertyResourceBundle loadGeneratorProperties;
 	private static final String LOAD_GEN_PROPS_LOC = "LoadGenerator.properties";
 	private static final String LOAD_GEN_LOG_PROPS_LOC = "LoadGeneratorLog.properties";
+	private PriorityBlockingQueue<String> scriptList;
+	private boolean stop;
+	private PriorityBlockingQueue<Robot> aliveRobotList;
 	
 	/**
 	 * Main method constructs a new LoadGeneratorImpl and calls run() on it 
 	 * @param args Console parsing not functional
 	 */
 	public static void main(String[] args) {
-		//TODO - Add a console parser for console based start-up
 		new LoadGenerator().run();
-		
 	}
 	
 	/**
@@ -52,7 +51,6 @@ public class LoadGenerator {
 		
 		consoleLog = Logger.getLogger("loadgenerator.consoleLog");
 		resultLog = Logger.getLogger("loadgenerator.consoleLog.resultLog");
-		errorLog = Logger.getLogger("loadgenerator.consoleLog.errorLog");
 		PropertyConfigurator.configureAndWatch(LOAD_GEN_LOG_PROPS_LOC);
 		
 		if( consoleLog.isDebugEnabled()) {
@@ -71,15 +69,20 @@ public class LoadGenerator {
 			);
 		} catch (NumberFormatException e) {
 			// Bad port number
-			errorLog.fatal("Bad Port Number receieved from properties.", e);
+			consoleLog.fatal("Bad Port Number receieved from properties.", e);
 			e.printStackTrace();
 			System.exit(3);
 		} catch (MalformedURLException e) {
 			// Bad URL parameters
-			errorLog.fatal("Bad URL parameters received from properties.", e);
+			consoleLog.fatal("Bad URL parameters received from properties.", e);
 			e.printStackTrace();
 			System.exit(3);
 		}
+		
+		if( consoleLog.isDebugEnabled()) {
+			consoleLog.debug("Properties configured.");
+		}
+		
 		
 	}
 
@@ -92,72 +95,68 @@ public class LoadGenerator {
 		return scheduler;
 	}
 
-	/**
+/*	*//**
 	 * Unimplemented optimization constraints that the LoadGenerator may send to the
 	 * Scheduler or perform locally.
-	 */
+	 *//*
 	public void optimize() {
 		// TODO Auto-generated method stub
 		
-	}
+	}*/
 
-	/**
+/*	*//**
 	 * Ask and retrieve Scripts to createRobots with
-	 */
+	 *//*
 	public void retrieveScripts() {
 		// TODO Auto-generated method stub
 		
-	}
+	}*/
 
-	/**
+/*	*//**
 	 * Send the necessary logs back to the Scheduler
-	 */
+	 *//*
 	public void sendLogs() {
 		// TODO Auto-generated method stub
 		
-	}
+	}*/
 
-	/**
+/*	*//**
 	 * Communicates with the scheduler to perform necessary tasks such as 
 	 * syncWithScheduler() or sendLogs(). May be implemented to synchronize the
 	 * System clock with the server's for additional accuracy.
-	 */
+	 *//*
 	public void syncWithScheduler() {
 		// TODO Auto-generated method stub
 		
-	}
+	}*/
 
-	/**
+/*	*//**
 	 * Part of an unimplemented requirement of the LoadGenerator to ensure
 	 * it is loading into a sustainable architecture.
-	 */
+	 *//*
 	public void systemScan() {
 		// TODO Auto-generated method stub
 		
-	}
+	}*/
 
 	/**
 	 * Create a robot
 	 * @param ScriptLocation Location of the Robot's Script
 	 * @param prefsLocation Location of the Robot's preferences
 	 */
-	public void createRobot(String ScriptLocation, String prefsLocation) {
-		// TODO Auto-generated method stub
-		//RobotChooser chooser = new RobotChooser();
+	public void createRobot(String ScriptLocation) {
 		
 		if( consoleLog.isDebugEnabled()) {
 			consoleLog.debug("Creating new Robot: " + ScriptLocation);
 		}
 		
-		Thread newRobot = selectRobotType(ScriptLocation, prefsLocation);
+		Thread newRobot = selectRobotType(ScriptLocation);
 		
-		//May not be the best way to handle a bad robotType
 		if (newRobot != null) {
 			newRobot.setName(ScriptLocation);
 			newRobot.run();
 		} else {
-			//TODO - clean up scripts and left unused info
-			errorLog.warn("Bad robotType found for: " + ScriptLocation);
+			consoleLog.warn("Bad robotType found for: " + ScriptLocation);
 		}
 		
 	}
@@ -172,8 +171,16 @@ public class LoadGenerator {
 		}
 
 		this.loadProperties();
-
-		// TODO Implementation of scheduler communications
+		scriptList = new PriorityBlockingQueue<String>();
+		stop = false;
+		aliveRobotList = new PriorityBlockingQueue<Robot>();
+		
+		// Sync
+		while (stop) {
+			//Ask for Scripts
+			//Return Data
+			//Start Scripts
+		}
 		
 		if ( consoleLog.isDebugEnabled() ) {
 			consoleLog.debug("Closing Load Generator");
@@ -181,24 +188,10 @@ public class LoadGenerator {
 		
 	}
 	
-	private Robot selectRobotType(String scriptLocation, String prefsLocation) {
+	private Robot selectRobotType(String scriptLocation) {
 		
-		char robotType = '\0';
-		
-		//TODO - Parse header
-		//Cannot be implemented until further knowledge
-		
-		//Create robot type
-		switch(robotType) {
-		case 'h':
-			return new HTMLRobot(scriptLocation,prefsLocation,consoleLog,resultLog,errorLog);
-		default:
-			//Bad script if this error log is reached
-			errorLog.warn("Bad robotType found.");
-			break;
-		}
-		
-		return null;
+			return new HTMLRobot(scriptLocation,consoleLog,resultLog);
+
 	}
 	
 	/**
@@ -220,14 +213,33 @@ public class LoadGenerator {
 			if (consoleLog.isDebugEnabled()) {
 				consoleLog.debug("Robot found, trying to kill it...");
 			}
-			
 			if( scriptLocation.equals(tarray[i].getName()) ) {
-				((Robot) tarray[i]).setContinueExecuting(false);
+				((Robot) tarray[i]).setStop(true);
 			}
 			i++;
 		}
 		
 		return false;
+	}
+	
+	public void killAllRobots () {
+		
+		if (consoleLog.isDebugEnabled()) {
+			consoleLog.debug("Attempting to kill all robots.");
+		}
+
+		while( !aliveRobotList.isEmpty() ) {
+			
+			if (consoleLog.isDebugEnabled()) {
+				consoleLog.debug("Robot found, trying to kill it...");
+			}
+			Robot tempRobot = aliveRobotList.poll();
+			if( tempRobot.isAlive() ) {
+				aliveRobotList.poll().setStop(true);
+			}
+
+		}
+		
 	}
 
 }
