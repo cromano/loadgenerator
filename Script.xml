@@ -29,6 +29,6 @@
 		<BUTTON name="test_button" />
 		<SET_INPUT_FIELD name="username" password="test" />
 		<FILL_FORM username="name" ></FILL_FORM>
-	</Steps>
+		<PRINT_HISTORY></PRINT_HISTORY></Steps>
 
 </MyScript>

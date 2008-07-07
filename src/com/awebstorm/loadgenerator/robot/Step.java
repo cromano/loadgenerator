@@ -26,6 +26,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlImage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlParameter;
+import com.gargoylesoftware.htmlunit.html.HtmlStyle;
 import com.gargoylesoftware.htmlunit.javascript.host.Attribute;
 
 /**
@@ -175,6 +176,7 @@ public class Step implements Comparable<Step> {
 			e.printStackTrace();
 			return false;
 		}
+		_state.addUrlToHistory(currentPath);
 		_state.setCurrentPage(invokePage);
 		_state.getResponses().add(invokePage.getWebResponse());
 		loadTime = invokePage.getWebResponse().getLoadTimeInMilliSeconds();
@@ -206,25 +208,33 @@ public class Step implements Comparable<Step> {
 		}*/
 		Iterable<HtmlElement> tempList = invokePage.getDocumentElement().getAllHtmlChildElements();
 		StringBuffer resourcesCollector = new StringBuffer();
+		String tempAttr;
+		WebResponse temporary;
+		NamedNodeMap tempAttrs;
 		for(HtmlElement temp: tempList) {
 			try {
-				WebResponse temporary = null;
-				NamedNodeMap tempAttrs = temp.getAttributes();
-				String tempAttr = temp.getAttribute("src");
+				temporary = null;
+				tempAttrs = temp.getAttributes();
+				tempAttr = temp.getAttribute("src");
 				if ( tempAttrs.getNamedItem("src") != null ) {
-					if ( tempAttr.startsWith("http") ) {
+					if ( !tempAttr.startsWith("http") ) {
+						tempAttr = currentPath + tempAttr;
+					}
+					if (_state.addUrlToHistory(tempAttr)) {
 						temporary = _state.getVUser().getPage(tempAttr).getWebResponse();
 						if ( consoleLog.isDebugEnabled() ) {
 							resourcesCollector.append("Resources obtained: " + tempAttr + '\n');
 						}
-					} else {
-						temporary = _state.getVUser().getPage(currentPath + tempAttr).getWebResponse();
-						if ( consoleLog.isDebugEnabled() ) {
-							resourcesCollector.append("Resources obtained: " + currentPath + tempAttr + '\n');
-						}
+						loadTime += temporary.getLoadTimeInMilliSeconds();
+						loadAmount += temporary.getResponseBody().length;
 					}
-					loadTime += temporary.getLoadTimeInMilliSeconds();
-					loadAmount += temporary.getResponseBody().length;
+				} else if (temp.getClass() == HtmlStyle.class ) {
+					temp = (HtmlStyle) temp;
+					tempAttrs = ((HtmlStyle) temp).getAttributes();
+					tempAttr = tempAttrs.item(0).getNodeValue();
+					if ( consoleLog.isDebugEnabled() ) {
+						resourcesCollector.append("Css Resources obtained: " + tempAttr + '\n');
+					}
 				}
 				//System.out.println(temp.hasAttribute("src"));
 			} catch (FailingHttpStatusCodeException e) {
@@ -238,8 +248,9 @@ public class Step implements Comparable<Step> {
 				return false;
 			}
 		}
-		System.out.println(resourcesCollector.toString());
-			
+		if ( consoleLog.isDebugEnabled() ) {
+			consoleLog.debug(resourcesCollector.toString());
+		}
 		//System.out.println(temp.asText());
 		return tempStatus;
 	}
