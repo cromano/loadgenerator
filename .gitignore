@@ -1,0 +1,9 @@
+# this file
+#.gitignore
+
+# Java temporary files
+*.class
+
+# Mac system files
+.DS_Store
+
