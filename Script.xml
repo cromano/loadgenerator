@@ -24,11 +24,11 @@
 
 	<Steps>
 		<WAIT length="3000" />
-		<INVOKE path="/wiki/Wiki" />
-		<VERIFY_TITLE title="page_title" />
+		<INVOKE path="" />
+		<VERIFY_TITLE title="Main Page - Wikipedia, the free encyclopedia" />
 		<BUTTON name="test_button" />
 		<SET_INPUT_FIELD name="username" password="test" />
-		<FILL_FORM username="name" />
+		<FILL_FORM username="name" ></FILL_FORM>
 	</Steps>
 
 </MyScript>

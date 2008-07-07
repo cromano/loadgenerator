@@ -65,14 +65,15 @@ public class HTMLRobot extends Robot {
 	 * Configures the WebClient with the preferences saved in the class fields
 	 */
 	public void configureRobot() {
-		javaScriptEnabled = Boolean.getBoolean(prefs.get("javaScriptEnabled"));
-		redirectEnabled = Boolean.getBoolean(prefs.get("redirectEnabled"));
-		throwExceptionOnScriptError = Boolean.getBoolean(prefs.get("throwExceptionOnScriptError"));
+		javaScriptEnabled = Boolean.parseBoolean(prefs.get("javaScriptEnabled"));
+		consoleLog.debug("Found pref redirectenabled: " + prefs.get("redirectEnabled"));
+		redirectEnabled = Boolean.parseBoolean(prefs.get("redirectEnabled"));
+		throwExceptionOnScriptError = Boolean.parseBoolean(prefs.get("throwExceptionOnScriptError"));
 		cacheSize = Integer.parseInt(prefs.get("cacheSize"));
-		useInsecureSSL = Boolean.getBoolean(prefs.get("useInsecureSSL"));
-		popupBlockerEnabled = Boolean.getBoolean(prefs.get("popupBlockerEnabled"));
-		throwExceptionOnFailingStatusCode = Boolean.getBoolean(prefs.get("throwExceptionOnFailingStatusCode"));
-		printContentOnFailingStatusCode = Boolean.getBoolean(prefs.get("printContentOnFailingStatusCode"));
+		useInsecureSSL = Boolean.parseBoolean(prefs.get("useInsecureSSL"));
+		popupBlockerEnabled = Boolean.parseBoolean(prefs.get("popupBlockerEnabled"));
+		throwExceptionOnFailingStatusCode = Boolean.parseBoolean(prefs.get("throwExceptionOnFailingStatusCode"));
+		printContentOnFailingStatusCode = Boolean.parseBoolean(prefs.get("printContentOnFailingStatusCode"));
 		browVersionString = prefs.get("htmlRobotBrowserVersion");
 		proxyHost = prefs.get("proxyHost");
 		proxyPort = Integer.parseInt(prefs.get("proxyPort"));
@@ -91,6 +92,7 @@ public class HTMLRobot extends Robot {
 		}
 		
 		client.setJavaScriptEnabled(javaScriptEnabled);
+		consoleLog.debug("Set pref redirecteEnabled: " + redirectEnabled);
 		client.setPopupBlockerEnabled(popupBlockerEnabled);
 		client.setRedirectEnabled(redirectEnabled);
 		client.setCache(new Cache());

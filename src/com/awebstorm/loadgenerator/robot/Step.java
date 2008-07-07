@@ -2,20 +2,31 @@ package com.awebstorm.loadgenerator.robot;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.log4j.Logger;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
 import org.xml.sax.Attributes;
 
 import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
+import com.gargoylesoftware.htmlunit.Page;
+import com.gargoylesoftware.htmlunit.SubmitMethod;
+import com.gargoylesoftware.htmlunit.WebRequestSettings;
+import com.gargoylesoftware.htmlunit.WebResponse;
+import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlImage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlParameter;
+import com.gargoylesoftware.htmlunit.javascript.host.Attribute;
 
 /**
  * Holds the script step information.
@@ -121,6 +132,10 @@ public class Step implements Comparable<Step> {
 				return false;
 			}
 		}
+		if(tempButton == null) {
+			consoleLog.error("No Button to click.");
+			return false;
+		}
 		try {
 			tempButton.click();
 		} catch (IOException e) {
@@ -145,6 +160,7 @@ public class Step implements Comparable<Step> {
 		boolean tempStatus = true;
 		HtmlPage invokePage = null;
 		try {
+			consoleLog.debug("Get VUser is redirect enabled: " + _state.getVUser().isRedirectEnabled());
 			invokePage = (HtmlPage) _state.getVUser().getPage(currentPath);
 		} catch (FailingHttpStatusCodeException e) {
 			consoleLog.error("Bad Status Code.");
@@ -163,10 +179,20 @@ public class Step implements Comparable<Step> {
 		_state.getResponses().add(invokePage.getWebResponse());
 		loadTime = invokePage.getWebResponse().getLoadTimeInMilliSeconds();
 		loadAmount = invokePage.getWebResponse().getResponseBody().length;
-		List<HtmlImage> tempList = (List<HtmlImage>) invokePage.getDocumentElement().getHtmlElementsByTagName("img");
-		for(HtmlImage temp: tempList)
+		//consoleLog.debug("Header length: " + invokePage.getWebResponse().getResponseHeaders().size());
+/*		List<NameValuePair> tempHeaders = invokePage.getWebResponse().getResponseHeaders();
+		for ( int i = 0; i < invokePage.getWebResponse().getResponseHeaders().size(); i++ ) {
+			System.out.println("Name: " + tempHeaders.get(i).getName());
+			System.out.println("Value: " + tempHeaders.get(i).getValue());
+		}*/
+		
+		//List<HtmlImage> tempImgList = (List<HtmlImage>) invokePage.getDocumentElement().getHtmlElementsByTagName("img");
+/*		for(HtmlImage temp: tempImgList) {
 			try {
-				_state.getVUser().getPage(currentPath + temp.getSrcAttribute()).getWebResponse().getUrl();
+				WebResponse temporary = _state.getVUser().getPage(currentPath + temp.getSrcAttribute()).getWebResponse();
+				
+				loadTime += temporary.getLoadTimeInMilliSeconds();
+				loadAmount += temporary.getResponseBody().length;
 			} catch (FailingHttpStatusCodeException e) {
 				e.printStackTrace();
 				return false;
@@ -177,11 +203,55 @@ public class Step implements Comparable<Step> {
 				e.printStackTrace();
 				return false;
 			}
+		}*/
+		Iterable<HtmlElement> tempList = invokePage.getDocumentElement().getAllHtmlChildElements();
+		StringBuffer resourcesCollector = new StringBuffer();
+		for(HtmlElement temp: tempList) {
+			try {
+				WebResponse temporary = null;
+				NamedNodeMap tempAttrs = temp.getAttributes();
+				String tempAttr = temp.getAttribute("src");
+				if ( tempAttrs.getNamedItem("src") != null ) {
+					if ( tempAttr.startsWith("http") ) {
+						temporary = _state.getVUser().getPage(tempAttr).getWebResponse();
+						if ( consoleLog.isDebugEnabled() ) {
+							resourcesCollector.append("Resources obtained: " + tempAttr + '\n');
+						}
+					} else {
+						temporary = _state.getVUser().getPage(currentPath + tempAttr).getWebResponse();
+						if ( consoleLog.isDebugEnabled() ) {
+							resourcesCollector.append("Resources obtained: " + currentPath + tempAttr + '\n');
+						}
+					}
+					loadTime += temporary.getLoadTimeInMilliSeconds();
+					loadAmount += temporary.getResponseBody().length;
+				}
+				//System.out.println(temp.hasAttribute("src"));
+			} catch (FailingHttpStatusCodeException e) {
+				e.printStackTrace();
+				return false;
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+				return false;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		System.out.println(resourcesCollector.toString());
+			
 		//System.out.println(temp.asText());
 		return tempStatus;
 	}
 
 	private boolean verifyTitle() {
+/*		NodeList temp = _state.getCurrentPage().getElementsByTagName("title");
+		for ( int i = 0; i < temp.getLength(); i++) {
+			System.out.println(temp.item(i).getNodeValue());
+		}*/
+		//System.out.println("test1 " + _state.getCurrentPage().getTitleText());
+		//System.out.println("test2 " + _list.getValue("title"));
+		//System.out.println("test3 " + _list.getValue(0));
 		return _state.getCurrentPage().getTitleText().equals(_list.getValue(0));
 	}
 

@@ -1,6 +1,8 @@
 package com.awebstorm.loadgenerator.robot;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Stack;
 
 import org.apache.commons.httpclient.NameValuePair;
@@ -22,6 +24,7 @@ public class BrowserState {
 	private WebWindow currentWindow;
 	private ArrayList<NameValuePair> postList;
 	private String domain;
+	private HashSet<String> browserHistory;
 	
 	/**
 	 * Default Constructor ensures no NullPointerExceptions
@@ -33,6 +36,7 @@ public class BrowserState {
 		pages = new Stack<Page>();
 		currentWindow = new TopLevelWindow("none", vUser);
 		postList = new ArrayList<NameValuePair>();
+		browserHistory = new HashSet<String>();
 	}
 	
 	public String getDomain() {
@@ -83,5 +87,11 @@ public class BrowserState {
 	public void setPostList(ArrayList<NameValuePair> postList) {
 		this.postList = postList;
 	}
-
+	public void addUrlToHistory( String location ) {
+		browserHistory.add(location);
+	}
+	public boolean isUrlInHistory (String location) {
+		return browserHistory.contains(location);
+	}
+	
 }
