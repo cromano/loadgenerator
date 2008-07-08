@@ -1,0 +1,5 @@
+# Java temporary files
+*.class
+bin/*
+# Mac system files
+.DS_Store
