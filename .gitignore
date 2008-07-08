@@ -1,5 +1,5 @@
 # Java temporary files
 *.class
-bin/*
+*.log
 # Mac system files
 .DS_Store
