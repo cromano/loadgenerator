@@ -1,5 +1,9 @@
 # Java temporary files
 *.class
+<<<<<<< HEAD:.gitignore
 *.log
+=======
+bin/*
+>>>>>>> master:.gitignore
 # Mac system files
 .DS_Store
