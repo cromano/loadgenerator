@@ -3,7 +3,7 @@ package com.awebstorm.loadgenerator.robot;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 
 /**
- * Creates a BrowserVersion from a comma delimited String
+ * Creates a BrowserVersion from a comma-delimited String.
  * @author Cromano
  *
  */
@@ -15,6 +15,10 @@ public class BrowserVersionFactory {
 	private String applicationJavaVersion;
 	private float  applicationVersionFloat;
 	
+	/**
+	 * Construct a BrowserVersionFactory using a comma-delimited String.
+	 * @param parsedData Data String
+	 */
 	public BrowserVersionFactory (String parsedData) {
 		
 		int tempIndex1 = 0;
@@ -31,6 +35,10 @@ public class BrowserVersionFactory {
 		
 	}
 	
+	/**
+	 * Retrieve a new BrowserVersion from this factory.
+	 * @return A new BrowserVersion
+	 */
 	public BrowserVersion getNewBrowserVersion () {
 		
 		return new BrowserVersion(

@@ -1,5 +1,7 @@
 package com.awebstorm.loadgenerator;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.PropertyResourceBundle;
@@ -45,7 +47,6 @@ public class LoadGenerator {
 	
 	/**
 	 * Configures the properties of this loadGenerator
-	 * 
 	 */
 	public void loadProperties( ) {
 		
@@ -87,57 +88,12 @@ public class LoadGenerator {
 	}
 
 	/**
-	 * Can be implemented using a static constant or a configuration value
+	 * Retrieve the URL of the Scheduler
 	 * @return The URI of the Scheduler
 	 */
 	public URL getSchedulerURL() {
-
 		return scheduler;
 	}
-
-/*	*//**
-	 * Unimplemented optimization constraints that the LoadGenerator may send to the
-	 * Scheduler or perform locally.
-	 *//*
-	public void optimize() {
-		// TODO Auto-generated method stub
-		
-	}*/
-
-/*	*//**
-	 * Ask and retrieve Scripts to createRobots with
-	 *//*
-	public void retrieveScripts() {
-		// TODO Auto-generated method stub
-		
-	}*/
-
-/*	*//**
-	 * Send the necessary logs back to the Scheduler
-	 *//*
-	public void sendLogs() {
-		// TODO Auto-generated method stub
-		
-	}*/
-
-/*	*//**
-	 * Communicates with the scheduler to perform necessary tasks such as 
-	 * syncWithScheduler() or sendLogs(). May be implemented to synchronize the
-	 * System clock with the server's for additional accuracy.
-	 *//*
-	public void syncWithScheduler() {
-		// TODO Auto-generated method stub
-		
-	}*/
-
-/*	*//**
-	 * Part of an unimplemented requirement of the LoadGenerator to ensure
-	 * it is loading into a sustainable architecture.
-	 *//*
-	public void systemScan() {
-		// TODO Auto-generated method stub
-		
-	}*/
 
 	/**
 	 * Create a robot
@@ -175,11 +131,23 @@ public class LoadGenerator {
 		stop = false;
 		aliveRobotList = new PriorityBlockingQueue<Robot>();
 		
-		// Sync
-		while (stop) {
-			//Ask for Scripts
-			//Return Data
-			//Start Scripts
+		schedulerSync();
+		
+		while (!stop) {
+			try {
+				this.wait(60000);
+			} catch (InterruptedException e) {
+				consoleLog.error("LoadGenerator inerrupted during a wait cycle",e);
+			}
+			try {
+				retrieveScripts();
+			} catch (IOException e) {
+				consoleLog.fatal("The LoadGenerator failed to retrieve scripts from the scheduler.",e);
+				System.exit(3);
+			}
+			while (!scriptList.isEmpty()) {
+				createRobot(scriptList.poll());
+			}
 		}
 		
 		if ( consoleLog.isDebugEnabled() ) {
@@ -188,10 +156,34 @@ public class LoadGenerator {
 		
 	}
 	
-	private Robot selectRobotType(String scriptLocation) {
-		
-			return new HTMLRobot(scriptLocation,consoleLog,resultLog);
+	/**
+	 * Synchronize LoadGenerator system variables with those of the scheduler.
+	 */
+	private void schedulerSync() {
+		//TODO -Sync with the scheduler for time and any other requirements
+	}
 
+	/**
+	 * Retrieve scripts from the scheduler when available
+	 * @throws IOException
+	 */
+	private void retrieveScripts() throws IOException {
+		InputStream scriptStream = null;
+		StringBuffer scriptBuffer = new StringBuffer();
+		//TODO -Open Stream...
+		while ( scriptStream.available() > 0 ) {
+			scriptBuffer.append((char)scriptStream.read());
+			//TODO -Write the script to file uniquely...
+		}
+	}
+
+	/**
+	 * Chooses a robotType to start based on undetermined factors.
+	 * @param scriptLocation
+	 * @return
+	 */
+	private Robot selectRobotType(String scriptLocation) {
+			return new HTMLRobot(scriptLocation,consoleLog,resultLog);
 	}
 	
 	/**
@@ -199,7 +191,7 @@ public class LoadGenerator {
 	 * @param scriptLocation The name of the robot's thread
 	 * @return True if the robot was asked to die, false if the robot was not found or otherwise unable to be stopped
 	 */
-	public boolean killRobot (String scriptLocation) {
+	private boolean killRobot (String scriptLocation) {
 		
 		if (consoleLog.isDebugEnabled()) {
 			consoleLog.debug("Attempting to kill: " + scriptLocation);
@@ -208,8 +200,8 @@ public class LoadGenerator {
 		Thread[] tarray = new Thread[100];
 		Thread.enumerate(tarray);
 		int i = 0;
+		
 		while( tarray[i] != null ) {
-			
 			if (consoleLog.isDebugEnabled()) {
 				consoleLog.debug("Robot found, trying to kill it...");
 			}
@@ -222,14 +214,16 @@ public class LoadGenerator {
 		return false;
 	}
 	
-	public void killAllRobots () {
+	/**
+	 * Kill all robots
+	 */
+	private void killAllRobots () {
 		
 		if (consoleLog.isDebugEnabled()) {
 			consoleLog.debug("Attempting to kill all robots.");
 		}
-
+		
 		while( !aliveRobotList.isEmpty() ) {
-			
 			if (consoleLog.isDebugEnabled()) {
 				consoleLog.debug("Robot found, trying to kill it...");
 			}
@@ -237,9 +231,7 @@ public class LoadGenerator {
 			if( tempRobot.isAlive() ) {
 				aliveRobotList.poll().setStop(true);
 			}
-
 		}
 		
 	}
-
 }

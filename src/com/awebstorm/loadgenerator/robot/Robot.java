@@ -5,7 +5,7 @@ import org.apache.log4j.Logger;
 
 
 /**
- * Shared Robot functions
+ * Generic Robot operations include Script parsing, general preferences, and stop boolean.
  * @author Cromano
  * @version 1.0
  *
@@ -64,17 +64,17 @@ public abstract class Robot extends Thread {
 	
 	/**
 	 * Method must be implemented by extending classes, it provides the functionality of
-	 * parsing the input file for steps
+	 * parsing the input file for steps.
 	 */
 	public abstract void run();
 	
 	/**
-	 * Must be implemented
+	 * Should be implemented by extending classed to load their particular Robot preferences.
 	 */
 	public abstract void configureRobot();
 	
 	/**
-	 * Load the preferences
+	 * Load the generic robot preferences.
 	 * @param prefsLocation Location of the preferences file
 	 */
 	private void setDefaultRobotPreferences( ) {
@@ -91,10 +91,18 @@ public abstract class Robot extends Thread {
 		}
 	}
 
+	/**
+	 * Get the value of the stop thread boolean.
+	 * @return stop thread value
+	 */
 	public synchronized boolean getStop() {
 		return stop;
 	}
 	
+	/**
+	 * Set the value of the stop thread boolean.
+	 * @param value New value
+	 */
 	public synchronized void setStop(boolean value) {
 		this.stop=value;
 	}

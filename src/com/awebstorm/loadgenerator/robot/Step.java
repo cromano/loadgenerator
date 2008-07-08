@@ -2,35 +2,27 @@ package com.awebstorm.loadgenerator.robot;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
-
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.log4j.Logger;
 import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.NodeList;
 import org.xml.sax.Attributes;
 
 import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
-import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.SubmitMethod;
 import com.gargoylesoftware.htmlunit.WebRequestSettings;
 import com.gargoylesoftware.htmlunit.WebResponse;
-import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlImage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlParameter;
 import com.gargoylesoftware.htmlunit.html.HtmlStyle;
-import com.gargoylesoftware.htmlunit.javascript.host.Attribute;
 
 /**
- * Holds the script step information.
+ * Holds the script step information and operations.
  * Details of a step are stored in an Attributes List
  * @author Cromano
  */
@@ -38,12 +30,13 @@ public class Step implements Comparable<Step> {
 	
 	public static enum ActionTypes {
 		
-		PROPERTIES,
 		INVOKE,
 		VERIFY_TITLE,
 		SET_INPUT_FIELD,
 		BUTTON,
-		WAIT
+		WAIT,
+		POST,
+		FILL_FORM
 		
 	}
 	
@@ -65,18 +58,34 @@ public class Step implements Comparable<Step> {
 		resultLog = Logger.getLogger("loadgenerator.consoleLog.resultLog");
 	}
 	
+	/**
+	 * Name of the Step
+	 * @return
+	 */
 	public String getName() {
 		return _name;
 	}
 	
+	/**
+	 * Attributes of the Step
+	 * @return
+	 */
 	public Attributes getList() {
 		return _list;
 	}
 
+	/**
+	 * Compare two steps by value
+	 */
 	public int compareTo(Step o) {
 		return _value - o.get_value();
 	}
 
+	/**
+	 * Execute a Step
+	 * @param jobID Robot job ID
+	 * @param browserState currentState of the robot's browser
+	 */
 	public void execute(String jobID, BrowserState browserState) {
 		loadTime = 0;
 		loadAmount = 0;
@@ -108,17 +117,126 @@ public class Step implements Comparable<Step> {
 		case BUTTON:
 			stepReturnStatus = this.button();
 			break;
+		case FILL_FORM:
+			stepReturnStatus = this.fillForm();
+			break;
+		case POST:
+			stepReturnStatus = this.post();
+			break;
 		default:
-			//Impossible
+			stepReturnStatus = false;
 			break;
 		}
 		
 		report(stepReturnStatus, jobID);
 		
 	}
+	
+	/**
+	 * Standard POST operation using the parameters stored in the postList
+	 * @return Success?
+	 */
+	private boolean post() {
+		boolean tempStatus = true;
+		WebRequestSettings newSettings = null;
+		HtmlPage postPage = null;
+		String currentPath = _state.getDomain() + _list.getValue(0);
+		try {
+			newSettings = new WebRequestSettings(new URL(currentPath),SubmitMethod.POST);
+		} catch (MalformedURLException e1) {
+			consoleLog.error("Bad URL passed to a POST operation.",e1);
+			return false;
+		}
+		newSettings.setRequestParameters(_state.getPostList());
+		try {
+			postPage = (HtmlPage) _state.getVUser().getPage(newSettings);
+		} catch (FailingHttpStatusCodeException e) {
+			consoleLog.error("POST operation, " + _name + " has a bad status message.",e);
+			return false;
+		} catch (IOException e) {
+			consoleLog.error("IOException thrown during a POST operation.",e);
+			return false;
+		}
+		_state.getPostList().clear();
+		loadTime = postPage.getWebResponse().getLoadTimeInMilliSeconds();
+		try {
+			loadAmount = postPage.getWebResponse().getContentAsStream().available();
+		} catch (IOException e1) {
+			consoleLog.error("IOException while reading content as from post stream to count loadAmount.", e1);
+		}
+		
+		Iterable<HtmlElement> tempList = postPage.getDocumentElement().getAllHtmlChildElements();
+		StringBuffer resourcesCollector = new StringBuffer();
+		String tempAttr;
+		WebResponse temporary;
+		NamedNodeMap tempAttrs;
+		for(HtmlElement temp: tempList) {
+			try {
+				temporary = null;
+				tempAttrs = temp.getAttributes();
+				tempAttr = temp.getAttribute("src");
+				if ( tempAttrs.getNamedItem("src") != null ) {
+					if ( !tempAttr.startsWith("http") ) {
+						if ( tempAttr.charAt(0) == '/' ) {
+							tempAttr = currentPath + tempAttr;
+						} else {
+							tempAttr = currentPath + '/' + tempAttr;
+						}
+					}
+					if (_state.addUrlToHistory(tempAttr)) {
+						temporary = _state.getVUser().getPage(tempAttr).getWebResponse();
+						if ( consoleLog.isDebugEnabled() ) {
+							resourcesCollector.append("Resources obtained: " + tempAttr + '\n');
+						}
+						loadTime += temporary.getLoadTimeInMilliSeconds();
+						loadAmount += temporary.getResponseBody().length;
+					}
+				} else if (temp.getClass() == HtmlStyle.class ) {
+					temp = (HtmlStyle) temp;
+					tempAttrs = ((HtmlStyle) temp).getAttributes();
+					tempAttr = ((HtmlStyle) temp).getTextContent();
+					if ( consoleLog.isDebugEnabled() ) {
+						resourcesCollector.append("Css Resources obtained: " + tempAttr + '\n');
+					}
+				}
+				//System.out.println(temp.hasAttribute("src"));
+			} catch (FailingHttpStatusCodeException e) {
+				e.printStackTrace();
+				return false;
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+				return false;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		if ( consoleLog.isDebugEnabled() ) {
+			consoleLog.debug(resourcesCollector.toString());
+		}
+		return tempStatus;
+	}
+	
+	/**
+	 * Fill a Form with information. Usually followed by a BUTTON or CLICK.
+	 * Not Yet Implemented.
+	 * @return
+	 */
+	private boolean fillForm() {
+		boolean tempStatus = true;
+		
+		
+		return tempStatus;
+	}
 
+	/**
+	 * Press the button whose name is given
+	 * @return
+	 */
 	private boolean button() {
 		HtmlButton tempButton = null;
+		if( _state.getCurrentPage() == null )
+			return false;
 		List<HtmlForm> tempForms = _state.getCurrentPage().getForms();
 		
 		if(tempForms == null) {
@@ -147,6 +265,9 @@ public class Step implements Comparable<Step> {
 		return true;
 	}
 
+	/**
+	 * Place the parameters for a POST operation in the postList.
+	 */
 	private void setInputFields() {
 		Attributes tempList = _list;
 		for (int i = 0;i < tempList.getLength(); i++) {
@@ -154,6 +275,10 @@ public class Step implements Comparable<Step> {
 		}
 	}
 
+	/**
+	 * Standard GET operation
+	 * @return
+	 */
 	private boolean invoke() {
 		String currentPath = _list.getValue(0);
 		currentPath = _state.getDomain() + currentPath;
@@ -164,16 +289,16 @@ public class Step implements Comparable<Step> {
 			consoleLog.debug("Get VUser is redirect enabled: " + _state.getVUser().isRedirectEnabled());
 			invokePage = (HtmlPage) _state.getVUser().getPage(currentPath);
 		} catch (FailingHttpStatusCodeException e) {
-			consoleLog.error("Bad Status Code.");
-			e.printStackTrace();
+			consoleLog.error("Bad Status Code.",e);
 			return false;
 		} catch (MalformedURLException e) {
-			consoleLog.error("MalformedURL");
-			e.printStackTrace();
+			consoleLog.error("MalformedURL",e);
+			return false;
+		} catch (SocketTimeoutException e ) {
+			consoleLog.info("Socket Timed Out from licit/illicit factors.");
 			return false;
 		} catch (IOException e) {
-			consoleLog.error("IO Error during Invoke.");
-			e.printStackTrace();
+			consoleLog.error("IO Error during Invoke.",e);
 			return false;
 		}
 		_state.addUrlToHistory(currentPath);
@@ -188,24 +313,6 @@ public class Step implements Comparable<Step> {
 			System.out.println("Value: " + tempHeaders.get(i).getValue());
 		}*/
 		
-		//List<HtmlImage> tempImgList = (List<HtmlImage>) invokePage.getDocumentElement().getHtmlElementsByTagName("img");
-/*		for(HtmlImage temp: tempImgList) {
-			try {
-				WebResponse temporary = _state.getVUser().getPage(currentPath + temp.getSrcAttribute()).getWebResponse();
-				
-				loadTime += temporary.getLoadTimeInMilliSeconds();
-				loadAmount += temporary.getResponseBody().length;
-			} catch (FailingHttpStatusCodeException e) {
-				e.printStackTrace();
-				return false;
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-				return false;
-			} catch (IOException e) {
-				e.printStackTrace();
-				return false;
-			}
-		}*/
 		Iterable<HtmlElement> tempList = invokePage.getDocumentElement().getAllHtmlChildElements();
 		StringBuffer resourcesCollector = new StringBuffer();
 		String tempAttr;
@@ -218,7 +325,11 @@ public class Step implements Comparable<Step> {
 				tempAttr = temp.getAttribute("src");
 				if ( tempAttrs.getNamedItem("src") != null ) {
 					if ( !tempAttr.startsWith("http") ) {
-						tempAttr = currentPath + tempAttr;
+						if ( tempAttr.charAt(0) == '/' ) {
+							tempAttr = currentPath + tempAttr;
+						} else {
+							tempAttr = currentPath + '/' + tempAttr;
+						}
 					}
 					if (_state.addUrlToHistory(tempAttr)) {
 						temporary = _state.getVUser().getPage(tempAttr).getWebResponse();
@@ -228,10 +339,11 @@ public class Step implements Comparable<Step> {
 						loadTime += temporary.getLoadTimeInMilliSeconds();
 						loadAmount += temporary.getResponseBody().length;
 					}
+				//Download css components
 				} else if (temp.getClass() == HtmlStyle.class ) {
 					temp = (HtmlStyle) temp;
 					tempAttrs = ((HtmlStyle) temp).getAttributes();
-					tempAttr = tempAttrs.item(0).getNodeValue();
+					tempAttr = ((HtmlStyle) temp).getTextContent();
 					if ( consoleLog.isDebugEnabled() ) {
 						resourcesCollector.append("Css Resources obtained: " + tempAttr + '\n');
 					}
@@ -251,21 +363,22 @@ public class Step implements Comparable<Step> {
 		if ( consoleLog.isDebugEnabled() ) {
 			consoleLog.debug(resourcesCollector.toString());
 		}
-		//System.out.println(temp.asText());
 		return tempStatus;
 	}
 
+	/**
+	 * Verify the currentpage title with an Attribute value.
+	 * @return
+	 */
 	private boolean verifyTitle() {
-/*		NodeList temp = _state.getCurrentPage().getElementsByTagName("title");
-		for ( int i = 0; i < temp.getLength(); i++) {
-			System.out.println(temp.item(i).getNodeValue());
-		}*/
-		//System.out.println("test1 " + _state.getCurrentPage().getTitleText());
-		//System.out.println("test2 " + _list.getValue("title"));
-		//System.out.println("test3 " + _list.getValue(0));
-		return _state.getCurrentPage().getTitleText().equals(_list.getValue(0));
+		if ( _state.getCurrentPage() != null )
+			return _state.getCurrentPage().getTitleText().equals(_list.getValue(0));
+		return false;
 	}
 
+	/**
+	 * Instruct this thread to wait for a given period of time.
+	 */
 	private void waitStep() {
 		if (_list.getValue(0).equals("")) {
 /*			try {
@@ -293,6 +406,11 @@ public class Step implements Comparable<Step> {
 		}
 	}
 	
+	/**
+	 * Report the results of a Step.
+	 * @param stepStatus Success if true, Failure if false
+	 * @param jobID Current job ID
+	 */
 	private void report(boolean stepStatus, String jobID) {
 		
 		StringBuffer tempResult = new StringBuffer();
@@ -326,10 +444,18 @@ public class Step implements Comparable<Step> {
 		resultLog.info(tempResult);
 	}
 
+	/**
+	 * Retrieve the value of a Step.
+	 * @return
+	 */
 	public int get_value() {
 		return _value;
 	}
 
+	/**
+	 * Set the browser state of a Step.
+	 * @param _state
+	 */
 	public void set_state(BrowserState _state) {
 		this._state = _state;
 	}

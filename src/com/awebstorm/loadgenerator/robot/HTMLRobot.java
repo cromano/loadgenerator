@@ -9,7 +9,7 @@ import com.gargoylesoftware.htmlunit.WebClient;
 
 
 /**
- * Robot for handling HTML calls
+ * Robot to handle HTML calls.
  * @author Cromano
  * @version 1.0
  *
@@ -44,7 +44,7 @@ public class HTMLRobot extends Robot {
 	
 	/**
 	 * Constructor defines the location of the XML RobotScript. All other variables will be
-	 * set to default settings
+	 * set to default settings.
 	 * 
 	 * @param scriptLocation Location of the Robot Script
 	 * @param consoleLog Logger to be used for general debugging and info
@@ -62,7 +62,7 @@ public class HTMLRobot extends Robot {
 	}
 	
 	/**
-	 * Configures the WebClient with the preferences saved in the class fields
+	 * Configures the WebClient with the preferences parsed from the Script.
 	 */
 	public void configureRobot() {
 		javaScriptEnabled = Boolean.parseBoolean(prefs.get("javaScriptEnabled"));
@@ -99,6 +99,7 @@ public class HTMLRobot extends Robot {
 		client.setPrintContentOnFailingStatusCode(printContentOnFailingStatusCode);
 		client.setThrowExceptionOnFailingStatusCode(throwExceptionOnFailingStatusCode);
 		client.setThrowExceptionOnScriptError(throwExceptionOnScriptError);
+		client.setTimeout(timeout);
 		try {
 			client.setUseInsecureSSL(useInsecureSSL);
 		} catch (GeneralSecurityException e) {
@@ -111,8 +112,7 @@ public class HTMLRobot extends Robot {
 	}
 
 	/**
-	 * The primary method of any robot
-	 * This method will load the settings from the settings file, then parse the script
+	 * Configures the robot, then executes the list of Steps.
 	 */
 	public void run() {
 

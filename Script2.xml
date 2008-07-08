@@ -23,17 +23,8 @@
 	</Properties>
 
 	<Steps>
-		<WAIT length="3000" />
-		<INVOKE path="" ></INVOKE>
-		<VERIFY_TITLE title="CustomerCentrix | We satisfy your business technology needs" ></VERIFY_TITLE>
-		
-		<SET_INPUT_FIELD name="test_user" pass="test_pass" op="Log In"/><POST path=""></POST><VERIFY_TITLE title="user account | CustomerCentrix"></VERIFY_TITLE><WAIT
-			length="3000">
-</WAIT>
-		
-		<FILL_FORM username="test_user" ></FILL_FORM>
-		<WAIT length="3000"></WAIT>
-		
-	</Steps>
+		<WAIT length="3000" ></WAIT>
+		<INVOKE path="/about_us.htm" />
+		<VERIFY_TITLE title="About CustomerCentrix | CustomerCentrix" /></Steps>
 
 </MyScript>

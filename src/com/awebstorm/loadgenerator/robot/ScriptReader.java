@@ -18,7 +18,8 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 
-/** Script Parser
+/** 
+ * Parses Steps and preferences from a Script XML file.
  * 
  * @author Cromano
  * @version 1.0
@@ -35,6 +36,13 @@ public class ScriptReader extends DefaultHandler {
 	private boolean propertiesMode;
 	private int stepCounter;
 
+	/**
+	 * Parse a Script.
+	 * @param script Location of the script to parse
+	 * @param console Log Standard log
+	 * @param stepQueue Queue to place new Steps into
+	 * @param prefs HashMap to place Robot preferences into
+	 */
 		public void run(String script,Logger consoleLog, PriorityQueue<Step> stepQueue, HashMap<String,String> prefs) {
 
 			_script = script;
@@ -73,6 +81,9 @@ public class ScriptReader extends DefaultHandler {
 			
 		}
 	
+		/**
+		 * Create a new Step at the start of any non-preference element
+		 */
 		public void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException {
 
@@ -85,11 +96,16 @@ public class ScriptReader extends DefaultHandler {
 			}
 		}
 
-
+		/**
+		 * Collect characters between elements to be used
+		 */
 		public void characters(char[] ch, int start, int length) throws SAXException {
 			tempString = new String(ch,start,length);
 		}
 
+		/**
+		 * Create a new preference for every non-Step element
+		 */
 		public void endElement(String uri, String localName,
 				String qName) throws SAXException {
 
@@ -105,7 +121,7 @@ public class ScriptReader extends DefaultHandler {
 		}
 		
 		/**
-		 * Runs the .run() method
+		 * Main method to test the operation of the ScriptReader. Has no production value.
 		 * @param args Should contain the input XML file and the output file
 		 */
 		public static void main(String[] args) {

@@ -13,6 +13,11 @@ import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.WebWindow;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
+/**
+ * The current state of a virtual browser.
+ * @author Cromano
+ *
+ */
 public class BrowserState {
 
 	private WebClient vUser;
@@ -26,7 +31,7 @@ public class BrowserState {
 	private HashSet<String> browserHistory;
 	
 	/**
-	 * Default Constructor ensures no NullPointerExceptions
+	 * Default Constructor ensures no NullPointerExceptions.
 	 */
 	public BrowserState() {
 		
