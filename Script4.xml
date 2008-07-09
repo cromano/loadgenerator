@@ -7,7 +7,7 @@
 	<Properties>
 		<cacheSize>50</cacheSize>
 		<domain>http://en.wikipedia.org</domain>
-		<jobID>0001</jobID>
+		<jobID>0004</jobID>
 		<timeout>5000</timeout>
 		<waitstep>1000</waitstep>
 		<iteration>1</iteration>
@@ -22,10 +22,10 @@
 		<htmlRobotBrowserVersion>none</htmlRobotBrowserVersion>
 	</Properties>
 
-	<Steps>
+	<STEPS>
 		<WAIT length="3000" />
 		<INVOKE path="\NoPageHere.htm" />
 		<VERIFY_TITLE title="bad_title" />
-		<BUTTON name="test_button" /></Steps>
+		<BUTTON name="test_button" /></STEPS>
 
 </MyScript>

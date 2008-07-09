@@ -7,7 +7,7 @@
 	<Properties>
 		<cacheSize>50</cacheSize>
 		<domain>http://en.wikipedia.org</domain>
-		<jobID>0001</jobID>
+		<jobID>0005</jobID>
 		<timeout>5000</timeout>
 		<waitstep>1000</waitstep>
 		<iteration>1</iteration>
@@ -22,12 +22,12 @@
 		<htmlRobotBrowserVersion>none</htmlRobotBrowserVersion>
 	</Properties>
 
-	<Steps>
+	<STEPS>
 		<WAIT length="3000" />
 		<INVOKE path="" />
 		<VERIFY_TITLE title="Main Page - Wikipedia, the free encyclopedia" />
 		<BUTTON name="test_button" />
 		<SET_INPUT_FIELD name="username" password="test" />
-		<FILL_FORM username="name" ></FILL_FORM></Steps>
+		<FILL_FORM username="name" ></FILL_FORM></STEPS>
 
 </MyScript>

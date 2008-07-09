@@ -22,7 +22,7 @@
 		<htmlRobotBrowserVersion>none</htmlRobotBrowserVersion>
 	</Properties>
 
-	<Steps>
+	<STEPS>
 		<WAIT length="3000" />
 		<INVOKE path="" ></INVOKE>
 		<VERIFY_TITLE title="CustomerCentrix | We satisfy your business technology needs" ></VERIFY_TITLE>
@@ -34,6 +34,6 @@
 		<FILL_FORM username="test_user" ></FILL_FORM>
 		<WAIT length="3000"></WAIT>
 		
-	</Steps>
+	</STEPS>
 
 </MyScript>

@@ -1,5 +1,6 @@
 # Java temporary files
 *.class
 *.log
+*.log.*
 # Mac system files
 .DS_Store
